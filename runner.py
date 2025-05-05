@@ -13,6 +13,7 @@ text_surface = test_font.render('My game', False, 'Black')
 
 
 snail_surface = pygame.image.load('graphics/snail/snail1.png').convert_alpha()
+Snail_rect = snail_surface.get_rect(bottomright = (600,300))
 snail_x_pos = 600
 
 Player_surface = pygame.image.load('graphics/Player/player_walk_1.png').convert_alpha()
@@ -31,7 +32,8 @@ while True:
     snail_x_pos -= 4
     if snail_x_pos < -100:
         snail_x_pos = 800
-    screen.blit(snail_surface, (snail_x_pos,265))
+    screen.blit(snail_surface,Snail_rect)
+    Snail_rect.x = snail_x_pos
     screen.blit(Player_surface, Player_rect)
     
    
