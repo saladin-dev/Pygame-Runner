@@ -30,6 +30,7 @@ snail_x_pos = 600  # we'll use this to move him manually
 # player character setup
 player_surf = pygame.image.load('graphics/Player/player_walk_1.png').convert_alpha()  # load player with transparency
 player_rect = player_surf.get_rect(midbottom=(80, 300))  # starting position of the player
+player_gravity = 0
 
 # game loop — runs every frame until you quit
 while True:
@@ -38,6 +39,14 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()  # closes pygame window properly
             exit()  # fully exits the program
+
+        # jump logic (fixed - now outside the QUIT check)
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                player_gravity = -20
+
+            if event.type == pygame.KEYUP:
+                print('key up')
 
         # you can detect if the mouse is hovering over the player like this
         # if event.type == pygame.MOUSEMOTION:
@@ -59,6 +68,11 @@ while True:
         snail_x_pos = 800
     snail_rect.x = snail_x_pos  # update snail's actual position
     screen.blit(snail_surf, snail_rect)  # draw the snail
+
+    # player gravity
+    player_gravity += 1
+    player_rect.y += player_gravity
+    screen.blit(player_surf, player_rect)
 
     # draw the player character
     screen.blit(player_surf, player_rect)
