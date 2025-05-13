@@ -37,24 +37,27 @@ player_gravity = 0  # starts with no gravity force applied
 
 # main game loop — runs until you quit
 while True:
-    # handle input events like closing the window or pressing keys
+    # check for input events like key presses, mouse clicks, or quitting
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            pygame.quit()  # shuts down pygame properly
-            exit()  # exits the program
+            pygame.quit()
+            exit()
 
-        # spacebar press to jump
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                player_gravity = -20  # gives an upward push
-                # cancel if already in air
-                if player_rect.bottom < 300:
-                    player_gravity = 0
+        if game_active:
+            # mouse click on player to jump (only if on ground)
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if player_rect.collidepoint(event.pos) and player_rect.bottom >= 300:
+                    player_gravity = -20
 
-        # mouse jump logic (commented out)
-        # if event.type == pygame.MOUSEBUTTONDOWN:
-        #     if player_rect.collidepoint(event.pos):
-        #         player_gravity = -20
+            # press space to jump (only if on ground)
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE and player_rect.bottom >= 300:
+                    player_gravity = -20
+        else:
+         # press space to restart
+          if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+            game_active = True
+
 
     # this is where all the actual game drawing and updates happen
     if game_active:
