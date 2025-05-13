@@ -8,78 +8,98 @@ screen = pygame.display.set_mode((800, 400))
 # set the window title at the top
 pygame.display.set_caption('Runner')
 
-# use this to control the FPS (frames per second)
+# controls the FPS (frames per second)
 clock = pygame.time.Clock()
 
-# loading a font file so we can draw text — 50 is the size
+# load a custom pixel-style font so we can draw text (size 50)
 test_font = pygame.font.Font('font/Pixeltype.ttf', 50)
 
-# background images
-sky_surf = pygame.image.load('graphics/Sky.png').convert()  # just loads the sky and optimizes it
-ground_surf = pygame.image.load('graphics/ground.png').convert()  # same thing for the ground
+# flag to track if the game is active or not (used for game over)
+game_active = True
 
-# setting up the score text
-score_surf = test_font.render('My game', False, (64, 64, 64))  # text, antialias off, dark gray
-score_rect = score_surf.get_rect(center=(400, 50))  # centering the text near top of screen
+# load background images
+sky_surf = pygame.image.load('graphics/Sky.png').convert()  # sky background
+ground_surf = pygame.image.load('graphics/ground.png').convert()  # ground image
+
+# render the game title (score display placeholder)
+score_surf = test_font.render('My game', False, (64, 64, 64))  # text with dark gray color
+score_rect = score_surf.get_rect(center=(400, 50))  # position the text near the top center
 
 # snail enemy setup
-snail_surf = pygame.image.load('graphics/snail/snail1.png').convert_alpha()  # loads snail with transparency
-snail_rect = snail_surf.get_rect(bottomright=(600, 300))  # start position of the snail
-snail_x_pos = 600  # we'll use this to move him manually
+snail_surf = pygame.image.load('graphics/snail/snail1.png').convert_alpha()  # snail image with transparency
+snail_rect = snail_surf.get_rect(bottomright=(600, 300))  # starting position for snail
+snail_x_pos = 600  # separate x position for manual control
 
 # player character setup
-player_surf = pygame.image.load('graphics/Player/player_walk_1.png').convert_alpha()  # load player with transparency
-player_rect = player_surf.get_rect(midbottom=(80, 300))  # starting position of the player
-player_gravity = 0
+player_surf = pygame.image.load('graphics/Player/player_walk_1.png').convert_alpha()  # player image with transparency
+player_rect = player_surf.get_rect(midbottom=(80, 300))  # start player on the ground
+player_gravity = 0  # starts with no gravity force applied
 
-# game loop — runs every frame until you quit
+# main game loop — runs until you quit
 while True:
-    # event loop — checks for inputs like mouse, keyboard, window close
+    # handle input events like closing the window or pressing keys
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            pygame.quit()  # closes pygame window properly
-            exit()  # fully exits the program
+            pygame.quit()  # shuts down pygame properly
+            exit()  # exits the program
 
-        # jump logic (fixed - now outside the QUIT check)
+        # spacebar press to jump
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
-                player_gravity = -20
+                player_gravity = -20  # gives an upward push
+                # cancel if already in air
+                if player_rect.bottom < 300:
+                    player_gravity = 0
 
-            if event.type == pygame.KEYUP:
-                print('key up')
-
-        # you can detect if the mouse is hovering over the player like this
-        # if event.type == pygame.MOUSEMOTION:
+        # mouse jump logic (commented out)
+        # if event.type == pygame.MOUSEBUTTONDOWN:
         #     if player_rect.collidepoint(event.pos):
-        #         print('collision')
+        #         player_gravity = -20
 
-    # draw the background images first (sky and ground)
-    screen.blit(sky_surf, (0, 0))
-    screen.blit(ground_surf, (0, 300))
+    # this is where all the actual game drawing and updates happen
+    if game_active:
+        # draw sky and ground
+        screen.blit(sky_surf, (0, 0))
+        screen.blit(ground_surf, (0, 300))
 
-    # draw the score box — kinda like a border (light blueish)
-    pygame.draw.rect(screen, '#c0e8ec', score_rect, 10)  # border
-    pygame.draw.rect(screen, '#c0e8ec', score_rect)  # fill
-    screen.blit(score_surf, score_rect)  # draw the actual score text
+        # draw score box and text
+        pygame.draw.rect(screen, '#c0e8ec', score_rect, 10)  # border
+        pygame.draw.rect(screen, '#c0e8ec', score_rect)  # fill
+        screen.blit(score_surf, score_rect)  # the text itself
 
-    # move the snail to the left every frame
-    snail_x_pos -= 4
-    if snail_x_pos < -100:  # once it goes off screen to the left, reset to the right
-        snail_x_pos = 800
-    snail_rect.x = snail_x_pos  # update snail's actual position
-    screen.blit(snail_surf, snail_rect)  # draw the snail
+        # move snail left
+        snail_x_pos -= 4
+        if snail_x_pos < -100:
+            snail_x_pos = 800  # reset to right side of screen
+        snail_rect.x = snail_x_pos  # update the actual rect
+        screen.blit(snail_surf, snail_rect)  # draw snail
 
-    # player gravity
-    player_gravity += 1
-    player_rect.y += player_gravity
-    screen.blit(player_surf, player_rect)
+        # apply gravity to player and move them down
+        player_gravity += 1  # gravity increases over time
+        player_rect.y += player_gravity  # apply to y position
 
-    # draw the player character
-    screen.blit(player_surf, player_rect)
+        # don't let player fall through the ground
+        if player_rect.bottom >= 300:
+            player_rect.bottom = 300
 
-    # collision detection (disabled right now)
-    # if player_rect.colliderect(snail_rect):
-    #     print('collision')
+        # draw player
+        screen.blit(player_surf, player_rect)
 
-    pygame.display.update()  # update everything on the screen
-    clock.tick(60)  # run at 60 frames per second
+        # collision check — if snail touches player, game over
+        if snail_rect.colliderect(player_rect):
+            game_active = False  # triggers yellow screen next frame
+
+        # draw player again (you had this here twice, so leaving it)
+        screen.blit(player_surf, player_rect)
+
+        # alternative collision detection code (commented out)
+        # if player_rect.colliderect(snail_rect):
+        #     print('collision')
+
+    else:
+        # if the game is not active (after collision), fill screen yellow
+        screen.fill('yellow')
+
+    # update everything we drew to the screen
+    pygame.display.update()
+    clock.tick(60)  # keep it running at 60 FPS
