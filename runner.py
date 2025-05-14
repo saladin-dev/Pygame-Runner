@@ -1,159 +1,144 @@
-import pygame  # bringing in pygame so we can do game stuff
-from sys import exit  # allows us to use exit() to close the game
+import pygame  # Bringing in pygame for everything game-related
+from sys import exit  # To close the game window cleanly
 
-# Function to display and return the current score (time survived)
+# -------- DISPLAY SCORE FUNCTION --------
 def display_score():
-    # get the number of seconds since the game started
+    # Get time passed since game started (in seconds)
     current_time = int(pygame.time.get_ticks() / 1000) - start_time
 
-    # render the score text onto a surface
+    # Render the score text surface using the font
     score_surf = test_font.render(f'Score: {current_time}', False, (64, 64, 64))
 
-    # center the score text at the top of the screen
+    # Center the score on the screen at the top
     score_rect = score_surf.get_rect(center=(400, 50))
 
-    # draw the score text onto the screen
+    # Draw the score on the screen
     screen.blit(score_surf, score_rect)
 
-    # return the score so we can store and show it later
+    # Return the number so we can reuse it for game over screen
     return current_time
 
-pygame.init()  # initialize all the pygame modules
+# -------- INIT EVERYTHING --------
+pygame.init()  # Always needed to start pygame properly
 
-# create a display window with width=800 and height=400
+# Create the game window (800 pixels wide, 400 pixels tall)
 screen = pygame.display.set_mode((800, 400))
 
-# set the title of the window
+# Set the window title at the top
 pygame.display.set_caption('Runner')
 
-# create a clock to control the frame rate
+# Clock controls how fast the game runs (FPS)
 clock = pygame.time.Clock()
 
-# load a pixel-style font at size 50
+# Load the pixel font from file and set size to 50
 test_font = pygame.font.Font('font/Pixeltype.ttf', 50)
 
-# flag to check if game is active or showing intro
-game_active = True
+# -------- GAME STATE VARIABLES --------
+game_active = False   # Is the game running or are we on the intro/game over screen?
+start_time = 0        # Time when the game started (used to track score)
+score = 0             # Stores the current score (used for game over display)
 
-# store the time the game started (used for score)
-start_time = 0
+# -------- LOAD BACKGROUND IMAGES --------
+sky_surface = pygame.image.load('graphics/Sky.png').convert()        # Sky background
+ground_surface = pygame.image.load('graphics/ground.png').convert()  # Ground texture
 
-# store the last score for display on the intro screen
-score = 0
+# -------- INTRO SCREEN GRAPHICS --------
+player_stand = pygame.image.load('graphics/player/player_stand.png').convert_alpha()
+player_stand = pygame.transform.rotozoom(player_stand, 0, 2)  # Make player_stand image bigger
+player_stand_rect = player_stand.get_rect(center=(400, 200))  # Center it on the screen
 
-# load background images and optimize them
-sky_surf = pygame.image.load('graphics/Sky.png').convert()
-ground_surf = pygame.image.load('graphics/ground.png').convert()
-
-# load the snail enemy image and make background transparent
-snail_surf = pygame.image.load('graphics/snail/snail1.png').convert_alpha()
-
-# get the rectangle for snail and position it near bottom right
-snail_rect = snail_surf.get_rect(bottomright=(600, 300))
-snail_x_pos = 600  # manually update x position for movement
-
-# load the player sprite and get its rectangle
-player_surf = pygame.image.load('graphics/Player/player_walk_1.png').convert_alpha()
-player_rect = player_surf.get_rect(midbottom=(80, 300))
-player_gravity = 0  # this controls falling and jumping
-
-# load and scale the standing player image for intro screen
-player_stand = pygame.image.load('graphics/Player/player_stand.png').convert_alpha()
-player_stand = pygame.transform.rotozoom(player_stand, 0, 2)
-player_stand_rect = player_stand.get_rect(center=(400, 200))
-
-# render game name and its position
+# Game title and instructions for intro screen
 game_name = test_font.render('Pixel Runner', False, (111, 196, 169))
 game_name_rect = game_name.get_rect(center=(400, 80))
-
-# render the "Press space" message
 game_message = test_font.render('Press space to run', False, (111, 196, 169))
-game_message_rect = game_message.get_rect(center=(400, 340))
+game_message_rect = game_message.get_rect(center=(400, 330))
 
-# ---------------- MAIN GAME LOOP ----------------
+# -------- PLAYER SETUP --------
+player_surface = pygame.image.load('graphics/player/player_walk_1.png').convert_alpha()
+player_rect = player_surface.get_rect(midbottom=(80, 300))  # Bottom left-ish of screen
+player_gravity = 0  # Gravity controls falling speed each frame
+
+# -------- SNAIL SETUP (Manual enemy) --------
+snail_surface = pygame.image.load('graphics/snail/snail1.png').convert_alpha()
+snail_rect = snail_surface.get_rect(bottomright=(600, 300))  # Starts near the right side
+snail_x_pos = 600  # This value manually controls snail's horizontal position
+
+# -------- MAIN GAME LOOP --------
 while True:
-    # check for events like key presses or window closing
+    # -------- EVENT LOOP --------
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
-            exit()
+            exit()  # Clean shutdown
 
-        # --------- input handling while game is running ---------
         if game_active:
-            # jump if mouse clicks on player while grounded
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if player_rect.collidepoint(event.pos) and player_rect.bottom >= 300:
-                    player_gravity = -20
-
-            # jump if spacebar is pressed while grounded
+            # Handle jump input — only if on ground
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE and player_rect.bottom >= 300:
-                    player_gravity = -20
+                    player_gravity = -20  # Big upward force to simulate jump
 
-        # --------- input on game over / intro screen ---------
         else:
-            # press space once to restart the game
+            # Restart game when pressing space on intro/game over screen
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                game_active = True                      # turn game back on
-                snail_rect.left = 800                   # move snail off screen
-                start_time = int(pygame.time.get_ticks() / 1000)  # reset timer
-                player_rect.bottom = 300                # reset player position
-                player_gravity = 0                      # clear jump
-                score = 0                               # reset score display
+                game_active = True                              # Resume game state
+                start_time = int(pygame.time.get_ticks() / 1000)  # Restart the score timer
+                player_rect.bottom = 300                        # Reset player position
+                player_gravity = 0                              # Reset fall speed
+                score = 0                                       # Start score at 0
 
-    # ---------------- GAME LOGIC + DRAWING ----------------
+                # -------- FIXED SNAIL COLLISION BUG --------
+                # We need to move the snail completely off-screen,
+                # and update BOTH the x position variable AND the actual rectangle
+                snail_x_pos = 800           # Reset the snail far right
+                snail_rect.x = snail_x_pos  # Actually apply the new position
+                # If we forget to update snail_x_pos, it moves back into player instantly
+
+    # -------- GAME ACTIVE --------
     if game_active:
-        # draw sky and ground
-        screen.blit(sky_surf, (0, 0))
-        screen.blit(ground_surf, (0, 300))
+        # Draw background sky and ground
+        screen.blit(sky_surface, (0, 0))
+        screen.blit(ground_surface, (0, 300))
 
-        # draw score and update the score variable
+        # Show and track the score
         score = display_score()
 
-        # move snail left each frame
-        snail_x_pos -= 4
+        # Move snail left across screen each frame
+        snail_x_pos -= 4  # Lower = slower, higher = faster
         if snail_x_pos < -100:
-            snail_x_pos = 800  # loop snail back to right edge
-        snail_rect.x = snail_x_pos  # apply new x position
-        screen.blit(snail_surf, snail_rect)  # draw snail
+            snail_x_pos = 800  # Wrap around to right side again
+        snail_rect.x = snail_x_pos  # Apply manual movement
+        screen.blit(snail_surface, snail_rect)  # Draw the snail
 
-        # apply gravity to player and move downward
+        # Apply gravity to player each frame
         player_gravity += 1
-        player_rect.y += player_gravity
+        player_rect.y += player_gravity  # Move player downward
 
-        # stop player from falling below ground
+        # Stop player from falling through ground
         if player_rect.bottom >= 300:
             player_rect.bottom = 300
 
-        # draw player character
-        screen.blit(player_surf, player_rect)
+        # Draw the player character
+        screen.blit(player_surface, player_rect)
 
-        # if player hits the snail — game over
-        if snail_rect.colliderect(player_rect):
-            game_active = False  # turn off game mode
+        # -------- COLLISION DETECTION --------
+        if player_rect.colliderect(snail_rect):
+            game_active = False  # Switch to game over mode
 
-        # draw player again (optional layering)
-        screen.blit(player_surf, player_rect)
-
+    # -------- GAME NOT ACTIVE (INTRO OR GAME OVER SCREEN) --------
     else:
-        # draw the intro or game over screen background
-        screen.fill((94, 129, 162))
+        screen.fill((94, 129, 162))  # Background color (soft blue)
+        screen.blit(player_stand, player_stand_rect)  # Show large standing player art
+        screen.blit(game_name, game_name_rect)        # Show game title
 
-        # draw the standing player image
-        screen.blit(player_stand, player_stand_rect)
-
-        # draw game title text
-        screen.blit(game_name, game_name_rect)
-
-        # if score is 0 (first launch), show press-space message
         if score == 0:
+            # First time playing: show instructions
             screen.blit(game_message, game_message_rect)
         else:
-            # if game ended, show final score
+            # After game ends: show final score
             score_message = test_font.render(f'Your score: {score}', False, (111, 196, 169))
             score_message_rect = score_message.get_rect(center=(400, 330))
             screen.blit(score_message, score_message_rect)
 
-    # update everything drawn this frame
-    pygame.display.update()
-    clock.tick(60)  # run the game at 60 FPS
+    # -------- UPDATE DISPLAY AND FPS --------
+    pygame.display.update()  # Draw everything we just set up this frame
+    clock.tick(60)  # Cap frame rate at 60 FPS
