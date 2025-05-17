@@ -2,6 +2,18 @@ import pygame                    # Handles graphics, game logic, and input
 from sys import exit             # Used to close the game window properly
 import random                    # Needed to spawn obstacles at random X positions
 
+class Player(pygame.sprite.Sprite):
+    def _init_(self):
+      super()._init_()
+      self.image = pygame.image.load('graphics/player/player_walk_1.png').convert_alpha
+      self.rect = self.image.image.get(midbottom = (200, 300))
+
+
+
+
+
+
+
 # -------- Function: player_animation --------
 # Handles switching between jump frame and walk animation based on player position
 def player_animation():
@@ -63,6 +75,9 @@ game_active = False
 start_time = 0
 score = 0
 obstacle_rect_list = []
+
+player = pygame.sprite.GroupSingle()
+player.add(Player())
 
 # -------- Background Art --------
 sky_surface = pygame.image.load('graphics/Sky.png').convert()
@@ -160,12 +175,13 @@ while True:
         if player_rect.bottom >= 300:
             player_rect.bottom = 300
 
-        player_animation()  # ✅ FIXED: Must run EVERY frame, not just when touching the ground
+        player_animation()  
         screen.blit(player_surf, player_rect)
+        player.draw(screen)
 
         obstacle_rect_list = obstacle_movement(obstacle_rect_list)
         game_active = collisions(player_rect, obstacle_rect_list)
-
+ 
     else:
         screen.fill((94, 129, 162))
         screen.blit(player_stand, player_stand_rect)
