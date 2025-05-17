@@ -1,5 +1,16 @@
 import pygame  # Bringing in pygame for everything game-related
 from sys import exit  # To close the game window cleanly
+import random
+
+def obstacle_movement(obstacle_list):
+    if obstacle_list:
+        for obstacle_rect in obstacle_list:
+            obstacle_rect.x -=5
+
+            screen.blit(snail_surface, obstacle_rect)
+            obstacle_list = [obstacle for obstacle in obstacle_list if obstacle.x > -100]
+        return obstacle_list
+    else: return []
 
 # -------- DISPLAY SCORE FUNCTION --------
 def display_score():
@@ -53,15 +64,22 @@ game_name_rect = game_name.get_rect(center=(400, 80))
 game_message = test_font.render('Press space to run', False, (111, 196, 169))
 game_message_rect = game_message.get_rect(center=(400, 330))
 
+# -------- TIMER SETUP --------
+obstacle_timer = pygame.USEREVENT + 1  # Custom event for spawning obstacles
+pygame.time.set_timer(obstacle_timer, 1500)  # Spawn an obstacle every 1.5 seconds
+
 # -------- PLAYER SETUP --------
 player_surface = pygame.image.load('graphics/player/player_walk_1.png').convert_alpha()
 player_rect = player_surface.get_rect(midbottom=(80, 300))  # Bottom left-ish of screen
 player_gravity = 0  # Gravity controls falling speed each frame
 
-# -------- SNAIL SETUP (Manual enemy) --------
+# -------- OBSTACLE SETUP --------
 snail_surface = pygame.image.load('graphics/snail/snail1.png').convert_alpha()
 snail_rect = snail_surface.get_rect(bottomright=(600, 300))  # Starts near the right side
 snail_x_pos = 600  # This value manually controls snail's horizontal position
+
+obstacle_rect_list = []  # List to store all active obstacles
+
 
 # -------- MAIN GAME LOOP --------
 while True:
@@ -92,6 +110,14 @@ while True:
                 snail_x_pos = 800           # Reset the snail far right
                 snail_rect.x = snail_x_pos  # Actually apply the new position
                 # If we forget to update snail_x_pos, it moves back into player instantly
+                # If we forget to update snail_rect.x, it never moves at all
+
+        # -------- SPAWN OBSTACLES --------
+        if event.type == obstacle_timer and game_active:
+            obstacle_rect_list.append(snail_surface.get_rect(bottomright=(random.randint(900, 1100), 300)))
+
+
+
 
     # -------- GAME ACTIVE --------
     if game_active:
@@ -103,11 +129,11 @@ while True:
         score = display_score()
 
         # Move snail left across screen each frame
-        snail_x_pos -= 4  # Lower = slower, higher = faster
-        if snail_x_pos < -100:
-            snail_x_pos = 800  # Wrap around to right side again
-        snail_rect.x = snail_x_pos  # Apply manual movement
-        screen.blit(snail_surface, snail_rect)  # Draw the snail
+      #  snail_x_pos -= 4  # Lower = slower, higher = faster
+        #if snail_x_pos < -100:
+           # snail_x_pos = 800  # Wrap around to right side again
+       # snail_rect.x = snail_x_pos  # Apply manual movement
+       # screen.blit(snail_surface, snail_rect)  # Draw the snail
 
         # Apply gravity to player each frame
         player_gravity += 1
@@ -120,8 +146,11 @@ while True:
         # Draw the player character
         screen.blit(player_surface, player_rect)
 
+        # -------- OBSTACLE MOVEMENT --------
+    obstacle_rect_list = obstacle_movement(obstacle_rect_list)
+
         # -------- COLLISION DETECTION --------
-        if player_rect.colliderect(snail_rect):
+    if player_rect.colliderect(snail_rect):
             game_active = False  # Switch to game over mode
 
     # -------- GAME NOT ACTIVE (INTRO OR GAME OVER SCREEN) --------
